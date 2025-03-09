@@ -14,7 +14,8 @@ app = FastAPI()
 
 # Definition of the expected format of the incoming data
 class IVData(BaseModel):
-    readings: list  # List containing voltage and current values
+    list
+   # readings: list  # List containing voltage and current values
 
 # classes
 classes = ["aging", "crack", "hotspot", "normal", "pid", "shading", "shortcircuit"]
