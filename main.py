@@ -5,21 +5,21 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 import uvicorn
 
-# تحميل المودل والـ scaler
-model = joblib.load("svm_model.pkl")  # تأكد من رفع هذا الملف إلى Railway
+# Download the model and scaler
+model = joblib.load("svm_model.pkl")  
 scaler = joblib.load("scaler.pkl")
 
-# تعريف FastAPI
+# FastAPI
 app = FastAPI()
 
-# تعريف الشكل المتوقع للبيانات الواردة
+# Definition of the expected format of the incoming data
 class IVData(BaseModel):
-    readings: list  # قائمة تحتوي على قيم الجهد والتيار
+    readings: list  # List containing voltage and current values
 
-# أسماء الـ classes
+# classes
 classes = ["aging", "crack", "hotspot", "normal", "pid", "shading", "shortcircuit"]
 
-# دالة استخراج الميزات من البيانات
+# Feature extraction function from data
 def calc_features(data_array):
     try:
         f1 = data_array.mean(axis=0)
@@ -31,25 +31,25 @@ def calc_features(data_array):
     except Exception:
         return [0] * 18  # في حالة الخطأ
 
-# تعريف API Endpoint لاستقبال البيانات من التطبيق
+# API Endpoint Definition for receiving data from the application
 @app.post("/predict")
 async def predict(data: IVData):
-    # تحويل القائمة إلى numpy array
+    # Convert list to numpy array
     iv_array = np.array(data.readings).reshape(-1, 2)
 
-    # استخراج الميزات
+    # Feature extraction
     new_features = calc_features(iv_array).reshape(1, -1)
 
-    # تطبيق الـ StandardScaler
+    #  StandardScaler
     new_features_scaled = scaler.transform(new_features)
 
-    # توقع الـ class باستخدام المودل
+    # Predict the class using the model
     prediction = model.predict(new_features_scaled)
 
-    # إرجاع نوع العيب بناءً على الرقم
+    # Returns defect type based on number
     return {"predicted_class": classes[prediction[0]]}
 
-# تشغيل التطبيق عند تشغيل الملف مباشرة
+#  Run the application when the file is played directly
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))  # استخدام المنفذ من متغير البيئة
     uvicorn.run(app, host="0.0.0.0", port=port)
